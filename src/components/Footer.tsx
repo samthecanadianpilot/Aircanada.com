@@ -1,13 +1,11 @@
-import Image from 'next/image';
-
 export default function Footer() {
   return (
     <footer className="footer">
       <div className="container">
         <div className="footer-grid">
           <div className="footer-brand">
-            <Image src="/logo-white.png" className="logo-dark-mode" alt="AirCanada PTFS" width={140} height={32} style={{ height: '32px', width: 'auto', marginBottom: '16px' }} />
-            <Image src="/logo-black.png" className="logo-light-mode" alt="AirCanada PTFS" width={140} height={32} style={{ height: '32px', width: 'auto', marginBottom: '16px' }} />
+            <img src="/logo-white.png" className="logo-dark-mode" alt="AirCanada PTFS" style={{ height: '32px', marginBottom: '16px' }} />
+            <img src="/logo-black.png" className="logo-light-mode" alt="AirCanada PTFS" style={{ height: '32px', marginBottom: '16px' }} />
             <p>The premier Air Canada PTFS community. A fan community of 7,000+ pilots, not affiliated with the real Air Canada.</p>
           </div>
           <div className="footer-col">
@@ -29,10 +27,12 @@ export default function Footer() {
             </ul>
           </div>
           <div className="footer-col">
-            <h4>Support</h4>
+            <h4>Support & Legal</h4>
             <ul>
               <li><a href="/community">Contact</a></li>
               <li><a href="/community">FAQ</a></li>
+              <li><a href="/tos">Terms of Service</a></li>
+              <li><a href="/privacy">Privacy Policy</a></li>
             </ul>
           </div>
         </div>
