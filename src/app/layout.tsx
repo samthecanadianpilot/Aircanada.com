@@ -4,6 +4,7 @@ import './booking.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WebsiteAssistant from '@/components/WebsiteAssistant';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: 'AirCanada PTFS',
@@ -25,6 +26,7 @@ export default function RootLayout({
         <main>{children}</main>
         <Footer />
         <WebsiteAssistant />
+        <Analytics />
       </body>
     </html>
   );
