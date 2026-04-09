@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { FaPlaneDeparture, FaPlane, FaUsers, FaYoutube, FaDiscord } from 'react-icons/fa';
+import { FaPlaneDeparture, FaPlane, FaUsers, FaYoutube, FaDiscord, FaClock, FaBell, FaCalendarCheck, FaArrowRight } from 'react-icons/fa';
 
 interface ActiveFlight {
   id: string; 
@@ -14,11 +13,47 @@ interface ActiveFlight {
   aircraft: string;
   eventLink: string;
   status: string;
+  departureTime: string | null;
+  endTime: string | null;
+  interestedCount: number;
+  eventName: string;
+  eventDescription: string;
+}
+
+function getTimeUntil(dateStr: string): string {
+  const now = new Date().getTime();
+  const dep = new Date(dateStr).getTime();
+  const diff = dep - now;
+
+  if (diff <= 0) return 'NOW';
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+function formatDepartureTime(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZoneName: 'short'
+  });
 }
 
 export default function Home() {
   const [activeFlights, setActiveFlights] = useState<ActiveFlight[]>([]);
   const [takenCounts, setTakenCounts] = useState<Record<string, number>>({});
+  const [dismissedBanner, setDismissedBanner] = useState(false);
+  const [, setTick] = useState(0);
 
   useEffect(() => {
     const fetchFlights = async () => {
@@ -26,14 +61,11 @@ export default function Home() {
         const res = await fetch('/api/events');
         if (res.ok) {
           const flights = await res.json();
-          // To merge with localStorage flights if needed, or just use API
-          // For now, we trust the API as the SSOT because of Discord Bot
           setActiveFlights(flights);
 
           const counts: Record<string, number> = {};
           flights.forEach((f: ActiveFlight) => {
-            const taken = JSON.parse(localStorage.getItem(`taken_${f.id}`) || '[]');
-            counts[f.id] = taken.length;
+            counts[f.id] = f.interestedCount || 0;
           });
           setTakenCounts(counts);
         }
@@ -43,12 +75,67 @@ export default function Home() {
     };
 
     fetchFlights();
-    const interval = setInterval(fetchFlights, 5000); // Check every 5 seconds for real-time
+    const interval = setInterval(fetchFlights, 5000);
     return () => clearInterval(interval);
   }, []);
 
+  // Tick every 30s to update countdowns
+  useEffect(() => {
+    const t = setInterval(() => setTick(prev => prev + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Find the next upcoming flight for the banner
+  const nextFlight = activeFlights.find(f => f.departureTime && f.status === 'Scheduled');
+  const activeFlight = activeFlights.find(f => f.status === 'Boarding');
+  const bannerFlight = activeFlight || nextFlight;
+
   return (
     <>
+      {/* ═══════════ LIVE DEPARTURE BANNER ═══════════ */}
+      {bannerFlight && !dismissedBanner && (
+        <div className={`departure-banner ${bannerFlight.status === 'Boarding' ? 'banner-live' : 'banner-upcoming'}`}>
+          <div className="container departure-banner-inner">
+            <div className="banner-left">
+              {bannerFlight.status === 'Boarding' ? (
+                <span className="banner-badge live"><span className="pulse-dot"></span> LIVE NOW</span>
+              ) : (
+                <span className="banner-badge upcoming"><FaClock /> UPCOMING</span>
+              )}
+              <div className="banner-flight-info">
+                <strong>{bannerFlight.flightNumber}</strong>
+                <span className="banner-route">{bannerFlight.origin} → {bannerFlight.destination}</span>
+              </div>
+            </div>
+            
+            <div className="banner-center">
+              {bannerFlight.status === 'Boarding' ? (
+                <p className="banner-message">
+                  <FaBell className="banner-bell" /> Flight is <strong>BOARDING NOW!</strong> Reserve your seat before it&apos;s full.
+                </p>
+              ) : bannerFlight.departureTime ? (
+                <p className="banner-message">
+                  <FaClock className="banner-clock" /> Departs <strong>{formatDepartureTime(bannerFlight.departureTime)}</strong>
+                  <span className="banner-countdown">({getTimeUntil(bannerFlight.departureTime)})</span>
+                </p>
+              ) : null}
+            </div>
+
+            <div className="banner-right">
+              <a
+                href={bannerFlight.eventLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-banner-book"
+              >
+                <FaCalendarCheck /> Click Interested
+              </a>
+              <button className="banner-dismiss" onClick={() => setDismissedBanner(true)} aria-label="Dismiss">✕</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="hero cinematic-hero">
         <div className="hero-overlay blur-overlay"></div>
         <div className="container hero-content text-center fade-in-up">
@@ -59,7 +146,7 @@ export default function Home() {
           </div>
           <div className="hero-buttons">
             <a href="#active-flights" className="btn btn-red btn-glass" style={{ fontSize: '1.1rem', padding: '16px 36px' }}>View Active Flights</a>
-            <Link href="/FlightDepo" className="btn btn-white btn-glass" style={{ fontSize: '1.1rem', padding: '16px 36px' }}>Staff Portal</Link>
+            <Link href="/news" className="btn btn-white btn-glass" style={{ fontSize: '1.1rem', padding: '16px 36px' }}>Latest News</Link>
           </div>
         </div>
       </div>
@@ -67,7 +154,7 @@ export default function Home() {
       <div id="active-flights" className="container section">
         <div className="text-center" style={{ marginBottom: '64px' }}>
           <h2 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-1px' }}>Active Server Events</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginTop: '8px' }}>Join a live PTFS flight hosted by our staff.</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginTop: '8px' }}>Real-time flights from our Discord — click &quot;Interested&quot; to reserve your seat.</p>
         </div>
 
         {activeFlights.length === 0 ? (
@@ -79,17 +166,17 @@ export default function Home() {
         ) : (
           <div className="flight-grid">
             {activeFlights.map(flight => {
-              const booked = takenCounts[flight.id] || 0;
-              const isFull = booked >= 25;
+              const interested = takenCounts[flight.id] || 0;
+              const isBoarding = flight.status === 'Boarding';
 
               return (
-                <div key={flight.id} className="flight-card glass-panel interactive-card">
+                <div key={flight.id} className={`flight-card glass-panel interactive-card ${isBoarding ? 'flight-card-live' : ''}`}>
                   <div className="fc-header">
                     <span className="fc-id">{flight.flightNumber}</span>
-                    {isFull ? (
-                      <span className="depo-badge depo-deployed" style={{ background: 'rgba(244,67,54,0.1)', color: '#f44336' }}>FLIGHT FULL</span>
-                    ) : (
+                    {isBoarding ? (
                       <span className="depo-badge depo-inflight"><span className="pulse-dot"></span> BOARDING</span>
+                    ) : (
+                      <span className="depo-badge depo-scheduled"><FaClock size={10} /> SCHEDULED</span>
                     )}
                   </div>
                   
@@ -99,15 +186,33 @@ export default function Home() {
                     <div className="fc-point">{flight.destination}</div>
                   </div>
 
+                  {/* ═══ DEPARTURE TIME DISPLAY ═══ */}
+                  {flight.departureTime && (
+                    <div className="fc-departure-time">
+                      <FaClock size={12} />
+                      <span>{formatDepartureTime(flight.departureTime)}</span>
+                      <span className="fc-countdown">{getTimeUntil(flight.departureTime)}</span>
+                    </div>
+                  )}
+
                   <div className="fc-meta">
                     <span><FaPlane size={12} /> {flight.aircraft}</span>
-                    <span style={{ color: isFull ? 'var(--ac-red)' : 'var(--text-secondary)' }}>
-                      <strong>{booked} / 25</strong> Seats
+                    <span>
+                      <FaUsers size={12} /> <strong>{interested}</strong> Interested
                     </span>
                   </div>
 
-                  <a href={flight.eventLink} target="_blank" rel="noopener noreferrer" className={`btn w-full ${isFull ? 'btn-outline' : 'btn-red'}`} style={{ marginTop: '24px', pointerEvents: isFull ? 'none' : 'auto', opacity: isFull ? 0.5 : 1 }}>
-                    {isFull ? 'Fully Booked' : 'RESERVE SEAT'}
+                  {/* ═══ INTERESTED / BOOK BUTTON → Links to Discord Event ═══ */}
+                  <a
+                    href={flight.eventLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`btn w-full ${isBoarding ? 'btn-red' : 'btn-outline btn-interested'}`}
+                    style={{ marginTop: '24px' }}
+                  >
+                    <FaCalendarCheck style={{ marginRight: '8px' }} />
+                    {isBoarding ? 'RESERVE SEAT — Click Interested' : 'View Event & Click Interested'}
+                    <FaArrowRight style={{ marginLeft: '8px', fontSize: '0.8em' }} />
                   </a>
                 </div>
               );
