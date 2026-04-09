@@ -45,20 +45,37 @@ export default function WebsiteAssistant() {
     setIsTyping(true);
 
     // AI Simulation / Rule-based Logic
-    setTimeout(() => {
+    setTimeout(async () => {
       let botResponse = "";
       const input = inputValue.toLowerCase();
 
       if (input.includes('flight') || input.includes('book') || input.includes('schedule')) {
-        botResponse = "You can view all active boarding flights on our homepage or the Tracker page. Would you like me to take you there?";
+        try {
+          const res = await fetch('/api/events');
+          if (res.ok) {
+            const flights = await res.json();
+            if (flights && flights.length > 0) {
+              const next = flights[0];
+              botResponse = `Currently, flight **${next.flightNumber}** is ${next.status === 'Boarding' ? 'boarding' : 'scheduled'} from **${next.origin}** to **${next.destination}**. You can book it on the Tracker page!`;
+            } else {
+              botResponse = "There are no active flights scheduled right now, but check back soon! Our staff pings Discord for every major event.";
+            }
+          } else {
+            botResponse = "I'm having trouble fetching the live schedule right now, but you can check the Flights page for updates!";
+          }
+        } catch (err) {
+          botResponse = "You can view all active boarding flights on our home page or the Tracker page. Would you like me to take you there?";
+        }
       } else if (input.includes('discord') || input.includes('join') || input.includes('group')) {
-        botResponse = "Our Discord community is the heart of our operations! You can join here: discord.gg/aircanada";
+        botResponse = "Our Discord community is the heart of our operations! You can join here: https://discord.gg/aircanada";
       } else if (input.includes('staff') || input.includes('portal') || input.includes('admin')) {
-        botResponse = "The Staff Portal is Restricted Area. If you are a pilot, please use the login link in the sidebar.";
+        botResponse = "The Staff Portal is Restricted Area. Authorized personnel can access it via the /staff or /FlightDepo routes.";
       } else if (input.includes('hello') || input.includes('hi') || input.includes('hey')) {
-        botResponse = "Hello! Captain! Ready for departure? How can I assist your flight today?";
+        botResponse = "Hello Captain! Ready for departure? How can I assist your flight today?";
+      } else if (input.includes('who') || input.includes('owner') || input.includes('gamo')) {
+        botResponse = "Air Canada PTFS was founded by **GAMO** and **Tattered**. They lead our community of 7,000+ members!";
       } else {
-        botResponse = "I'm not sure about that, but our staff in Discord can definitely help! Use the 'Join Discord' button in the menu.";
+        botResponse = "I'm still learning! For complex questions, our staff in Discord are always available. Use the 'Join Discord' button in the menu.";
       }
 
       const botMsg: Message = {
@@ -94,9 +111,9 @@ export default function WebsiteAssistant() {
               <div className="online-indicator"></div>
             </div>
             <div>
-              <h3>AC Assistant</h3>
-              <p>Flight Ops Support</p>
-            </div>
+               <h3>AC Assistant</h3>
+               <p className="status-online">● Online</p>
+             </div>
           </div>
           <button onClick={() => setIsOpen(false)} className="close-btn"><FaTimes /></button>
         </div>
@@ -262,6 +279,12 @@ export default function WebsiteAssistant() {
           font-size: 0.75rem;
           color: var(--text-secondary);
           margin: 0;
+        }
+
+        .status-online {
+          color: #4caf50 !important;
+          font-weight: 600;
+          letter-spacing: 0.5px;
         }
 
         .close-btn {
