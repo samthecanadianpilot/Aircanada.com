@@ -6,9 +6,8 @@ export function middleware(request: NextRequest) {
 
   if (pathname.startsWith('/staff')) {
     const session = request.cookies.get('staff_session')?.value;
-    const masterKey = process.env.STAFF_KEY || 'gamo123';
 
-    if (!session || session !== masterKey) {
+    if (!session) {
       if (pathname === '/staff-gate') return NextResponse.next();
       
       const url = request.nextUrl.clone();
