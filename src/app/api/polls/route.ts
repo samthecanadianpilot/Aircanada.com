@@ -1,102 +1,97 @@
 import { NextResponse } from 'next/server';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
-
-const DATA_DIR = join(process.cwd(), 'data');
-const POLLS_FILE = join(DATA_DIR, 'polls.json');
-
-function ensureDataFile() {
-  if (!existsSync(DATA_DIR)) {
-    mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!existsSync(POLLS_FILE)) {
-    const defaultPolls = [
-      {
-        id: '1',
-        question: 'Should we introduce the A350-1000 to the long-haul fleet?',
-        options: [
-          { label: 'Affirmative', votes: 0 },
-          { label: 'Negative', votes: 0 },
-          { label: 'Require further data', votes: 0 }
-        ],
-        votedIps: [],
-        timestamp: new Date().toISOString()
-      }
-    ];
-    writeFileSync(POLLS_FILE, JSON.stringify(defaultPolls, null, 2));
-  }
-}
-
-function getPolls() {
-  ensureDataFile();
-  try {
-    const raw = readFileSync(POLLS_FILE, 'utf-8');
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-function savePolls(polls: any[]) {
-  ensureDataFile();
-  writeFileSync(POLLS_FILE, JSON.stringify(polls, null, 2));
-}
+import { getPolls, addPoll } from '@/lib/database';
 
 export async function GET() {
-  return NextResponse.json(getPolls());
+  try {
+    const polls = await getPolls();
+    return NextResponse.json(polls);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch polls' }, { status: 500 });
+  }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const { action, pollId, optionIndex, question, options } = body;
-
-    const polls = getPolls();
-
-    if (action === 'vote') {
-      const ip = request.headers.get('x-forwarded-for') || 'unknown';
-      const pollIdx = polls.findIndex((p: any) => p.id === pollId);
-      
-      if (pollIdx === -1) return NextResponse.json({ error: 'Poll not found' }, { status: 404 });
-      
-      const poll = polls[pollIdx];
-      
-      if (poll.votedIps.includes(ip)) {
-        return NextResponse.json({ error: 'IP_ALREADY_VOTED' }, { status: 403 });
-      }
-
-      poll.options[optionIndex].votes += 1;
-      poll.votedIps.push(ip);
-      
-      savePolls(polls);
-      return NextResponse.json({ success: true, poll });
-    }
+    const data = await req.json();
+    const { action, question, options, pollId, optionIndex } = data;
 
     if (action === 'create') {
       const newPoll = {
-        id: `poll-${Date.now()}`,
+        id: "poll-" + Date.now().toString(),
         question,
         options: options.map((opt: string) => ({ label: opt, votes: 0 })),
         votedIps: [],
         timestamp: new Date().toISOString()
       };
-      polls.unshift(newPoll);
-      savePolls(polls);
-      return NextResponse.json(newPoll);
+      
+      await addPoll(newPoll);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'vote') {
+      const polls = await getPolls();
+      const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+      
+      const poll = polls.find((p: any) => p.id === pollId);
+      if (!poll) return NextResponse.json({ error: 'Poll not found' }, { status: 404 });
+      
+      if (poll.votedIps.includes(ip)) {
+        return NextResponse.json({ error: 'IP_ALREADY_VOTED' }, { status: 403 });
+      }
+      
+      poll.options[optionIndex].votes += 1;
+      poll.votedIps.push(ip);
+      
+      // Save entire polls array back since addPoll unshifts, we need an updatePoll
+      // Quick fix for polls file update:
+      const { Octokit } = require("@octokit/rest");
+      const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '' });
+      
+      let sha;
+      try {
+        const fileData = await octokit.repos.getContent({ owner: 'samthecanadianpilot', repo: 'Aircanada.com', path: 'data/polls.json', ref: 'main' });
+        sha = fileData.data.sha;
+      } catch (e) {}
+
+      await octokit.repos.createOrUpdateFileContents({
+        owner: 'samthecanadianpilot', repo: 'Aircanada.com', path: 'data/polls.json', message: 'db: vote registered',
+        content: Buffer.from(JSON.stringify(polls, null, 2)).toString('base64'), branch: 'main', sha
+      });
+
+      return NextResponse.json({ success: true, optionIndex });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
-  } catch (err) {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-  if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    
+    if (!id) return NextResponse.json({ error: 'Poll ID required' }, { status: 400 });
 
-  const polls = getPolls().filter((p: any) => p.id !== id);
-  savePolls(polls);
-  return NextResponse.json({ success: true });
+    const polls = await getPolls();
+    const newPolls = polls.filter((p: any) => p.id !== id);
+    
+    const { Octokit } = require("@octokit/rest");
+    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '' });
+    let sha;
+    try {
+      const fileData = await octokit.repos.getContent({ owner: 'samthecanadianpilot', repo: 'Aircanada.com', path: 'data/polls.json', ref: 'main' });
+      sha = fileData.data.sha;
+    } catch (e) {}
+
+    await octokit.repos.createOrUpdateFileContents({
+      owner: 'samthecanadianpilot', repo: 'Aircanada.com', path: 'data/polls.json', message: 'db: poll removed',
+      content: Buffer.from(JSON.stringify(newPolls, null, 2)).toString('base64'), branch: 'main', sha
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to delete poll' }, { status: 500 });
+  }
 }
