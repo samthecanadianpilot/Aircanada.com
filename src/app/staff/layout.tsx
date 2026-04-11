@@ -10,7 +10,8 @@ import {
   LogOut,
   Shield,
   ChevronRight,
-  Plane
+  Plane,
+  Database
 } from "lucide-react";
 import Cookies from "js-cookie";
 
@@ -19,6 +20,7 @@ const navItems = [
   { name: "Team Manager", href: "/staff/team", icon: Users, desc: "Personnel Hierarchy" },
   { name: "Custom Forms", href: "/staff/forms", icon: FileText, desc: "Application Builder" },
   { name: "Active Polls", href: "/staff/polls", icon: BarChart3, desc: "Staff Decisions" },
+  { name: "User Database", href: "/staff/database", icon: Database, desc: "Discord Profiles" },
 ];
 
 export default function StaffLayout({
