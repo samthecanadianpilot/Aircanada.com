@@ -1,60 +1,36 @@
 'use client';
 
-import { FaUserShield, FaUsers, FaCogs } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { FaUsers, FaShieldAlt } from 'react-icons/fa';
+import { Loader2 } from 'lucide-react';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  pfp: string | null;
+  order: number;
+}
 
 export default function TeamPage() {
-  const team = [
-    {
-      section: "Founders & Executives",
-      members: [
-        { name: "GAMO", role: "CEO & Founder", icon: <FaUserShield /> },
-        { name: "Tattered", role: "Founder", icon: <FaUserShield /> },
-        { name: "Lionfish", role: "COO | Chief Operating Officer", icon: <FaCogs /> }
-      ]
-    },
-    {
-      section: "Board of Directors",
-      members: [
-        { name: "AjSabers", role: "CAO | Chief Administrative Officer", icon: undefined },
-        { name: "Sam", role: "CCO | Chief Commercial Officer", icon: undefined },
-        { name: "Omar", role: "CMO | Chief Marketing Officer", icon: undefined },
-        { name: "Deivid", role: "CXO | Chief Experience Officer", icon: undefined }
-      ]
-    },
-    {
-      section: "Management",
-      members: [
-        { name: "DOLO | Pizz...", role: "HRM | Human Resources Manager", icon: undefined },
-        { name: "SOM | TNR | ATC...", role: "SDM | Staff Deployment Manager", icon: undefined },
-        { name: "FQM | HRT | T...", role: "Coordinator", icon: undefined }
-      ]
-    },
-    {
-      section: "Aviation Staff & Partners",
-      members: [
-        { name: "Volt", role: "Associate", icon: undefined },
-        { name: "Chairman of Ryanair", role: "Associate", icon: undefined },
-        { name: "dub (@dub_xxxx)", role: "Associate", icon: undefined },
-        { name: "dan (@Dan...)", role: "Partner", icon: undefined },
-        { name: "cxz3664", role: "Partner", icon: undefined },
-        { name: "yangggg (@di...)", role: "Partner", icon: undefined }
-      ]
-    },
-    {
-      section: "Flight Operations & Crew",
-      members: [
-        { name: "pat (@mr...)", role: "SR.CPT | Senior Pilot", icon: undefined },
-        { name: "CAPT | TNR | S14", role: "Captain", icon: undefined },
-        { name: "Countryball", role: "CC | Cabin Crew", icon: undefined },
-        { name: "mcchent...", role: "GC | Ground Crew", icon: undefined },
-        { name: "ReyArgentina", role: "GC | Ground Crew", icon: undefined },
-        { name: "casey (@Cas...)", role: "FD | Flight Deck", icon: undefined },
-        { name: "Man777", role: "FD | Flight Deck", icon: undefined },
-        { name: "vxrse", role: "FD | Flight Deck", icon: undefined },
-        { name: "Richie", role: "JCC | Junior Cabin Crew", icon: undefined }
-      ]
-    }
-  ];
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/team")
+      .then(res => res.json())
+      .then(data => {
+        setMembers(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div className="flex h-screen items-center justify-center bg-black">
+      <Loader2 className="animate-spin text-red-600" size={48} />
+    </div>
+  );
 
   return (
     <div className="container section">
@@ -66,24 +42,31 @@ export default function TeamPage() {
       </div>
 
       <div className="team-container">
-        {team.map((category, idx) => (
-          <div key={idx} className="team-section" style={{ marginBottom: '48px' }}>
-            <h2 className="team-section-title">{category.section}</h2>
-            <div className="team-grid">
-              {category.members.map((member, midx) => (
-                <div key={midx} className="team-card">
-                  <div className="team-card-avatar">
-                    {member.icon || <FaUsers size={24} />}
-                  </div>
-                  <div className="team-card-info">
-                    <h3 className="team-member-name">{member.name}</h3>
-                    <p className="team-member-role">{member.role}</p>
-                  </div>
+        <div className="team-section" style={{ marginBottom: '48px' }}>
+          <h2 className="team-section-title">Leadership & Command</h2>
+          <div className="team-grid">
+            {members.map((member) => (
+              <div key={member.id} className="team-card">
+                <div className="team-card-avatar" style={{ overflow: 'hidden' }}>
+                  {member.pfp ? (
+                    <img src={member.pfp} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <FaShieldAlt size={24} color="#dc3545" />
+                  )}
                 </div>
-              ))}
-            </div>
+                <div className="team-card-info">
+                  <h3 className="team-member-name">{member.name}</h3>
+                  <p className="team-member-role">{member.role}</p>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+          {members.length === 0 && (
+            <p className="text-center" style={{ color: 'var(--text-secondary)', opacity: 0.5, marginTop: '2rem' }}>
+              Telecommunications offline. No personnel detected.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
