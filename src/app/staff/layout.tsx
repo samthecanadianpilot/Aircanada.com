@@ -1,26 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   BarChart3, 
   Users, 
   FileText, 
   Newspaper, 
-  Settings, 
   LogOut,
+  Shield,
   ChevronRight,
-  Shield
+  Plane
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import Cookies from "js-cookie";
-import { useRouter } from "next/navigation";
 
 const navItems = [
-  { name: "News & Dispatch", href: "/staff/news", icon: Newspaper },
-  { name: "Meet the Team", href: "/staff/team", icon: Users },
-  { name: "Form Builder", href: "/staff/forms", icon: FileText },
-  { name: "Staff Polling", href: "/staff/polls", icon: BarChart3 },
+  { name: "News Feed", href: "/staff/news", icon: Newspaper, desc: "Dispatch & Alerts" },
+  { name: "Team Manager", href: "/staff/team", icon: Users, desc: "Personnel Hierarchy" },
+  { name: "Custom Forms", href: "/staff/forms", icon: FileText, desc: "Application Builder" },
+  { name: "Active Polls", href: "/staff/polls", icon: BarChart3, desc: "Staff Decisions" },
 ];
 
 export default function StaffLayout({
@@ -37,54 +35,76 @@ export default function StaffLayout({
   };
 
   return (
-    <div className="flex h-screen bg-[#050505] text-[#ededed]">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-white/5 bg-[#0a0a0a] flex flex-col">
-        <div className="p-6 border-b border-white/5 flex items-center space-x-3">
-          <div className="p-1.5 rounded-lg bg-red-600/10 border border-red-600/20">
-            <Shield size={20} className="text-red-500" />
-          </div>
-          <div>
-            <h2 className="text-xs font-bold tracking-widest uppercase text-white/90">Command Center</h2>
-            <p className="text-[8px] tracking-widest text-white/30 uppercase mt-0.5">Air Canada PTFS</p>
+    <div className="flex h-screen overflow-hidden bg-[#f5f6f8]">
+      {/* ── Dark Sidebar ── */}
+      <aside className="w-[260px] bg-[#0c0c0c] flex flex-col shrink-0 border-r border-white/[0.04]">
+        {/* Brand */}
+        <div className="px-6 py-6 border-b border-white/[0.06]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-red-600 flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.3)]">
+              <Plane size={16} className="text-white -rotate-45" />
+            </div>
+            <div>
+              <h2 className="text-[11px] font-bold tracking-[0.15em] uppercase text-white/80">
+                Air Canada
+              </h2>
+              <p className="text-[9px] tracking-[0.1em] text-white/25 uppercase">
+                Command Center
+              </p>
+            </div>
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 mt-4">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "group flex items-center px-3 py-2.5 text-[11px] font-bold tracking-widest uppercase transition-all rounded-md relative",
-                pathname === item.href 
-                  ? "bg-red-600/10 text-red-500" 
-                  : "text-white/40 hover:bg-white/5 hover:text-white"
-              )}
-            >
-              <item.icon size={16} className={cn("mr-3", pathname === item.href ? "text-red-500" : "text-white/20 group-hover:text-white/60")} />
-              {item.name}
-              {pathname === item.href && (
-                <div className="absolute left-0 w-1 h-4 bg-red-600 rounded-full" />
-              )}
-            </Link>
-          ))}
+        {/* Nav */}
+        <nav className="flex-1 p-3 space-y-0.5 mt-2 overflow-y-auto">
+          {navItems.map((item) => {
+            const active = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 relative ${
+                  active
+                    ? "bg-white/[0.08] text-white"
+                    : "text-white/35 hover:bg-white/[0.04] hover:text-white/70"
+                }`}
+              >
+                {active && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-red-500 rounded-r-full" />
+                )}
+                <item.icon
+                  size={17}
+                  className={active ? "text-red-500" : "text-white/20 group-hover:text-white/40"}
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[12px] font-semibold tracking-wide block">
+                    {item.name}
+                  </span>
+                  <span className="text-[9px] tracking-wider text-white/20 uppercase block mt-px">
+                    {item.desc}
+                  </span>
+                </div>
+                {active && <ChevronRight size={12} className="text-white/20" />}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="p-4 border-t border-white/5">
-          <button 
+        {/* Footer */}
+        <div className="p-3 border-t border-white/[0.06]">
+          <button
             onClick={handleLogout}
-            className="w-full flex items-center px-3 py-2.5 text-[11px] font-bold tracking-widest uppercase text-white/20 hover:text-red-500 hover:bg-red-600/5 transition-all rounded-md"
+            className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-semibold tracking-wider uppercase text-white/20 hover:text-red-400 hover:bg-red-600/[0.06] transition-all rounded-lg"
           >
-            <LogOut size={16} className="mr-3" />
-            Decommission
+            <LogOut size={15} />
+            Sign Out
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto bg-[#050505]">
-        <div className="p-8 max-w-6xl mx-auto">
+      {/* ── Main Canvas (Light) ── */}
+      <main className="flex-1 overflow-y-auto bg-[#f5f6f8]">
+        <div className="max-w-6xl mx-auto px-8 py-8">
           {children}
         </div>
       </main>
