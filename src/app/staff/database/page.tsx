@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, CheckCircle2, ShieldCore, Database, Search, Edit2 } from "lucide-react";
+import { User, CheckCircle2, Shield, Database, Search, Edit2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -147,7 +147,7 @@ export default function UserDatabase() {
                  <div>
                    <h3 className="text-lg font-bold text-gray-900">{selectedUser.discord_name}</h3>
                    <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-0.5">
-                     <ShieldCore size={12} className="text-red-500" />
+                     <Shield size={12} className="text-red-500" />
                      {selectedUser.rank} Active
                    </div>
                  </div>
