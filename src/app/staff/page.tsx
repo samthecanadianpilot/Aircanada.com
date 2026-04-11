@@ -1,74 +1,98 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, Plane, Users, FileText, BarChart3, Radio } from "lucide-react";
+import { Shield, Plane, Users, FileText, BarChart3, Radio, Newspaper, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 const stats = [
-  { label: "Active Dispatch", value: "12", icon: Radio },
-  { label: "Staff On-Duty", value: "48", icon: Users },
-  { label: "Pending Enlist", value: "3", icon: FileText },
-  { label: "Fleet Readiness", value: "98%", icon: Plane },
+  { label: "Active Dispatch", value: "12", icon: Radio, color: "text-red-500 bg-red-50" },
+  { label: "Staff On-Duty", value: "48", icon: Users, color: "text-blue-500 bg-blue-50" },
+  { label: "Pending Enlist", value: "3", icon: FileText, color: "text-amber-500 bg-amber-50" },
+  { label: "Fleet Readiness", value: "98%", icon: Plane, color: "text-emerald-500 bg-emerald-50" },
+];
+
+const quickLinks = [
+  { label: "Create Dispatch", href: "/staff/news", icon: Newspaper, color: "bg-red-600 hover:bg-red-700 text-white" },
+  { label: "Manage Roster", href: "/staff/team", icon: Users, color: "bg-white hover:bg-gray-50 text-gray-900 border border-gray-200" },
+  { label: "Form Builder", href: "/staff/forms", icon: FileText, color: "bg-white hover:bg-gray-50 text-gray-900 border border-gray-200" },
+  { label: "Active Polls", href: "/staff/polls", icon: BarChart3, color: "bg-white hover:bg-gray-50 text-gray-900 border border-gray-200" },
 ];
 
 export default function StaffPortal() {
   return (
-    <div className="space-y-12">
-      <div className="flex flex-col items-start gap-4">
-        <div className="px-3 py-1 bg-red-600/10 border border-red-500/20 text-red-500 rounded text-[9px] font-black uppercase tracking-[0.4em] italic shadow-[0_0_15px_rgba(220,38,38,0.1)]">
-          System Operational
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-semibold tracking-wide uppercase">
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+            System Online
+          </span>
         </div>
-        <h1 className="text-4xl font-black tracking-tighter uppercase italic leading-none">
-          Command <br /> <span className="text-red-600">Overview</span>
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+          Command Overview
         </h1>
-        <p className="text-[10px] tracking-[0.2em] text-white/40 uppercase max-w-sm mt-4 font-bold leading-relaxed">
-           Welcome to the Air Canada PTFS Decentralized Management Grid. 
-           Strategic operations, fleet logic, and personnel management are authorized via this portal only.
+        <p className="text-sm text-gray-500 mt-1 max-w-xl">
+          Welcome to the Air Canada PTFS management dashboard. Monitor operations, manage the team, and publish dispatches.
         </p>
       </div>
 
+      {/* Stats Grid */}
       <div className="grid grid-cols-4 gap-4">
         {stats.map((stat, i) => (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            key={stat.label} 
-            className="p-6 bg-white/5 border border-white/5 rounded-2xl hover:border-red-500/20 transition-all group overflow-hidden relative"
+            transition={{ delay: i * 0.08 }}
+            key={stat.label}
+            className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow group"
           >
-            <stat.icon className="text-white/10 group-hover:text-red-500 transition-colors mb-4" size={24} />
-            <h3 className="text-2xl font-black uppercase tracking-tighter italic">{stat.value}</h3>
-            <p className="text-[9px] uppercase tracking-widest text-white/30 font-bold mt-1 leading-none">{stat.label}</p>
-            <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-red-600/5 rounded-full blur-2xl group-hover:bg-red-500/10 transition-all" />
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${stat.color}`}>
+              <stat.icon size={18} />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 tracking-tight">{stat.value}</h3>
+            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mt-1">{stat.label}</p>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-8">
-        <div className="p-8 bg-[#0a0a0a] border border-white/5 rounded-3xl space-y-6">
-           <h4 className="text-[11px] font-black uppercase tracking-widest text-white/40 italic">Recent Transmissions</h4>
-           <div className="space-y-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="flex gap-4 items-start pb-4 border-b border-white/5 last:border-0 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
-                  <div className="w-1 h-8 bg-red-600/20 rounded-full mt-1" />
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider">Fleet Alert: Update {i}x-AC</p>
-                    <p className="text-[8px] uppercase tracking-widest text-white/20 mt-1">2 hours ago</p>
-                  </div>
-                </div>
-              ))}
-           </div>
+      {/* Quick Links */}
+      <div>
+        <h2 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">Quick Actions</h2>
+        <div className="grid grid-cols-4 gap-3">
+          {quickLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`flex items-center gap-3 px-5 py-4 rounded-xl text-sm font-semibold transition-all ${link.color} group`}
+            >
+              <link.icon size={16} />
+              <span className="flex-1">{link.label}</span>
+              <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0" />
+            </Link>
+          ))}
         </div>
+      </div>
 
-        <div className="grid grid-cols-2 gap-4">
-           <Link href="/staff/news" className="p-6 bg-red-600 hover:bg-red-700 rounded-2xl transition-all shadow-[0_10px_30px_rgba(220,38,38,0.2)] flex flex-col justify-end">
-              <h4 className="text-sm font-black uppercase italic tracking-tighter">Publish Hub</h4>
-              <p className="text-[9px] uppercase tracking-widest text-white/80 mt-1">Launch Dispatch</p>
-           </Link>
-           <Link href="/staff/team" className="p-6 bg-white hover:bg-neutral-200 rounded-2xl transition-all flex flex-col justify-end text-black">
-              <h4 className="text-sm font-black uppercase italic tracking-tighter">Team Grid</h4>
-              <p className="text-[9px] uppercase tracking-widest text-black/60 mt-1">Personnel Sync</p>
-           </Link>
+      {/* Recent Activity */}
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-50">
+          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Recent Activity</h3>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {[
+            { msg: "Fleet Alert: Boeing 787 added to roster", time: "2 hours ago", type: "alert" },
+            { msg: "Poll completed: A350-1000 fleet decision", time: "5 hours ago", type: "poll" },
+            { msg: "New staff application received", time: "1 day ago", type: "form" },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50/50 transition-colors">
+              <div className={`w-2 h-2 rounded-full ${
+                item.type === 'alert' ? 'bg-red-400' : item.type === 'poll' ? 'bg-blue-400' : 'bg-amber-400'
+              }`} />
+              <p className="text-sm text-gray-700 flex-1">{item.msg}</p>
+              <span className="text-xs text-gray-400">{item.time}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
