@@ -11,26 +11,24 @@ function parseEventInfo(event: any) {
   const name = event.name || "";
   const fullText = name + "\n" + desc;
 
-  // ═══ Parse Departing airport — e.g. "Departing: Toronto Pearson International Airport (YYZ/CYYZ)"
+  // ═══ Parse Departing airport
   let origin = "YYZ";
-  // More flexible regex: search for 3-letter uppercase letters in parentheses, possibly followed by /ICAO
-  const departingMatch = desc.match(/Departing:\s*.*?\(([A-Z]{3,4})(?:\/([A-Z]{4}))?\)/i);
+  // More flexible regex: Support "Departure:" or "Departing:", and handle spaces in parentheses
+  const departingMatch = desc.match(/(?:Departing|Departure):\s*.*?\(([A-Z]{3,4})(?:\s*[\/\-]\s*([A-Z]{4}))?\)/i);
   if (departingMatch) {
     origin = departingMatch[1].toUpperCase();
   } else {
-    // Fallback search for any 3-letter code in parentheses after "Departing:"
-    const fallbackOrigin = desc.match(/Departing:.*?\(?([A-Z]{3})\)?/i);
+    const fallbackOrigin = desc.match(/(?:Departing|Departure):\s*.*?\(?([A-Z]{3,4})\)?/i);
     if (fallbackOrigin) origin = fallbackOrigin[1].toUpperCase();
   }
 
-  // ═══ Parse Arriving airport — e.g. "Arriving: Washington Ronald Reagan National Airport (DCA/KDCA)"
+  // ═══ Parse Arriving airport
   let destination = "TBD";
-  const arrivingMatch = desc.match(/Arriving:\s*.*?\(([A-Z]{3,4})(?:\/([A-Z]{4}))?\)/i);
+  const arrivingMatch = desc.match(/(?:Arriving|Arrival):\s*.*?\(([A-Z]{3,4})(?:\s*[\/\-]\s*([A-Z]{4}))?\)/i);
   if (arrivingMatch) {
     destination = arrivingMatch[1].toUpperCase();
   } else {
-    // Fallback search for any 3-letter code in parentheses after "Arriving:"
-    const fallbackDest = desc.match(/Arriving:.*?\(?([A-Z]{3})\)?/i);
+    const fallbackDest = desc.match(/(?:Arriving|Arrival):\s*.*?\(?([A-Z]{3,4})\)?/i);
     if (fallbackDest) destination = fallbackDest[1].toUpperCase();
   }
 
@@ -130,53 +128,71 @@ export async function GET() {
       }
     }
 
-    // 3. ALSO fetch recent messages from the Air Canada PTFS announcements channel
-    //    Channel: https://discord.com/channels/1163913364431441970/1461312014310965416
+    // 3. ALSO fetch recent messages from the Air Canada PTFS announcement channels
     const ANNOUNCEMENT_GUILD_ID = '1163913364431441970';
-    const ANNOUNCEMENT_CHANNEL_ID = '1461312014310965416';
+    const ANNOUNCEMENT_CHANNELS = [
+      '1461312014310965416', // Primary
+      '1367975588228235314'  // Secondary/New
+    ];
     
-    try {
-      const msgsRes = await fetch(
-        `https://discord.com/api/v10/channels/${ANNOUNCEMENT_CHANNEL_ID}/messages?limit=20`,
-        { headers: { Authorization: `Bot ${DISCORD_TOKEN}` } }
-      );
+    for (const channelId of ANNOUNCEMENT_CHANNELS) {
+      try {
+        const msgsRes = await fetch(
+          `https://discord.com/api/v10/channels/${channelId}/messages?limit=20`,
+          { headers: { Authorization: `Bot ${DISCORD_TOKEN}` } }
+        );
 
-      if (msgsRes.ok) {
-        const messages = await msgsRes.json();
-        
-        for (const msg of messages) {
-          const content = msg.content || '';
+        if (msgsRes.ok) {
+          const messages = await msgsRes.json();
           
-          // Check if this message contains a flight announcement (has our known format)
-          if (content.includes('Departing:') && content.includes('Flight Number:')) {
-            // Parse it using the same logic as scheduled events
-            const fakeEvent = {
-              id: `msg-${msg.id}`,
-              name: 'Flight Announcement',
-              description: content,
-              guild_id: ANNOUNCEMENT_GUILD_ID,
-              status: 1, // Treat as Scheduled
-              scheduled_start_time: null,
-              scheduled_end_time: null,
-              user_count: 0,
-              created_at: msg.timestamp
-            };
+          for (const msg of messages) {
+            const content = msg.content || '';
+            
+            // Check for multiple announcement formats
+            const isOldFormat = content.includes('Departing:') && content.includes('Flight Number:');
+            const isNewFormat = content.startsWith('# AC') && content.includes('to') && content.includes('departing');
+            
+            if (isOldFormat || isNewFormat) {
+              const fakeEvent = {
+                id: `msg-${msg.id}`,
+                name: 'Flight Announcement',
+                description: content,
+                guild_id: ANNOUNCEMENT_GUILD_ID,
+                status: 1, // Treat as Scheduled
+                scheduled_start_time: null,
+                scheduled_end_time: null,
+                user_count: 0,
+                created_at: msg.timestamp
+              };
 
-            const parsed = parseEventInfo(fakeEvent);
-            
-            // Build a Discord channel link (since this isn't a scheduled event)
-            parsed.eventLink = `https://discord.com/channels/${ANNOUNCEMENT_GUILD_ID}/${ANNOUNCEMENT_CHANNEL_ID}/${msg.id}`;
-            
-            // Only add if we haven't already seen this flight number from scheduled events
-            if (!seenFlightNumbers.has(parsed.flightNumber)) {
-              allFlights.push(parsed);
-              seenFlightNumbers.add(parsed.flightNumber);
+              const parsed = parseEventInfo(fakeEvent);
+              
+              // If it was the new format, parseEventInfo might need help since it doesn't find "Departing:"
+              if (isNewFormat && parsed.flightNumber === 'AC000') {
+                const newFnMatch = content.match(/#\s*(AC\s*\d+)/i);
+                if (newFnMatch) parsed.flightNumber = newFnMatch[1].replace(/\s+/g, '').toUpperCase();
+                
+                const newDestMatch = content.match(/to\s+([A-Za-z\s]+)\s+—/i);
+                if (newDestMatch) parsed.destination = newDestMatch[1].trim();
+                
+                const timeMatch = content.match(/<t:(\d+):/);
+                if (timeMatch) {
+                  parsed.departureTime = new Date(parseInt(timeMatch[1]) * 1000).toISOString();
+                }
+              }
+
+              parsed.eventLink = `https://discord.com/channels/${ANNOUNCEMENT_GUILD_ID}/${channelId}/${msg.id}`;
+              
+              if (!seenFlightNumbers.has(parsed.flightNumber)) {
+                allFlights.push(parsed);
+                seenFlightNumbers.add(parsed.flightNumber);
+              }
             }
           }
         }
+      } catch (channelErr) {
+        console.warn(`Could not fetch announcement channel ${channelId} messages:`, channelErr);
       }
-    } catch (channelErr) {
-      console.warn('Could not fetch announcement channel messages:', channelErr);
     }
 
     // Sort by departure time (soonest first)
