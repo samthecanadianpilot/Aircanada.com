@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import './booking.css';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import WebsiteAssistant from '@/components/WebsiteAssistant';
+import LayoutWrapper from '@/components/LayoutWrapper';
 
 export const metadata: Metadata = {
   title: 'AirCanada PTFS',
@@ -21,10 +20,15 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body>
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
-        <WebsiteAssistant />
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8616384867038103"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+        <LayoutWrapper>
+          {children}
+        </LayoutWrapper>
       </body>
     </html>
   );
