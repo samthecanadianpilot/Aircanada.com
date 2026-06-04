@@ -13,9 +13,9 @@ const stats = [
 
 const quickLinks = [
   { label: "Create Dispatch", href: "/staff/news", icon: Newspaper, color: "bg-red-600 hover:bg-red-700 text-white" },
+  { label: "Manage Magazines", href: "/staff/magazines", icon: FileText, color: "bg-white hover:bg-gray-50 text-gray-900 border border-gray-200" },
   { label: "Manage Roster", href: "/staff/team", icon: Users, color: "bg-white hover:bg-gray-50 text-gray-900 border border-gray-200" },
   { label: "Form Builder", href: "/staff/forms", icon: FileText, color: "bg-white hover:bg-gray-50 text-gray-900 border border-gray-200" },
-  { label: "Active Polls", href: "/staff/polls", icon: BarChart3, color: "bg-white hover:bg-gray-50 text-gray-900 border border-gray-200" },
 ];
 
 export default function StaffPortal() {

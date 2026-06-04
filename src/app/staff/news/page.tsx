@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Image as ImageIcon, AlertTriangle, Plane, Calendar, Compass, Users, Loader2, ChevronDown, X } from "lucide-react";
+import { Plus, Trash2, Edit2, Save, Image as ImageIcon, AlertTriangle, Plane, Calendar, Compass, Users, Loader2, ChevronDown, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -24,6 +24,13 @@ export default function NewsHub() {
     content: "",
     category: "Alert",
     image: null as string | null
+  });
+  
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    headline: "",
+    content: "",
+    category: "Alert",
   });
 
   useEffect(() => { fetchNews(); }, []);
@@ -54,6 +61,47 @@ export default function NewsHub() {
         fetchNews();
       }
     } catch { toast.error("Failed to publish"); }
+  };
+
+  const handleEdit = (post: any) => {
+    setEditingId(post.id);
+    setEditForm({
+      headline: post.headline,
+      content: post.content,
+      category: post.category || "Alert",
+    });
+    setExpandedId(post.id);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editForm.headline || !editForm.content) return toast.error("Required fields missing");
+    try {
+      const token = btoa("staff-123-gamo123");
+      const body = new FormData();
+      body.append("token", token);
+      body.append("id", editingId!);
+      body.append("headline", editForm.headline);
+      body.append("content", editForm.content);
+      body.append("category", editForm.category);
+      const res = await fetch("/api/news", { method: "PUT", body });
+      if (res.ok) {
+        toast.success("Dispatch updated");
+        setEditingId(null);
+        fetchNews();
+      }
+    } catch { toast.error("Failed to update dispatch"); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this dispatch?")) return;
+    try {
+      const token = btoa("staff-123-gamo123");
+      const res = await fetch(`/api/news?id=${id}&token=${token}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("Dispatch deleted");
+        fetchNews();
+      }
+    } catch { toast.error("Failed to delete dispatch"); }
   };
 
   if (loading) return (
@@ -157,24 +205,58 @@ export default function NewsHub() {
                     </div>
                     <h3 className="font-semibold text-gray-900 text-[15px] leading-snug">{post.headline}</h3>
                   </div>
-                  <button className="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-red-500 transition-all">
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="opacity-0 group-hover:opacity-100 flex items-center gap-2 transition-all">
+                    {editingId !== post.id && (
+                      <button onClick={() => handleEdit(post)} className="p-2 text-gray-300 hover:text-blue-500 transition-all">
+                        <Edit2 size={14} />
+                      </button>
+                    )}
+                    <button onClick={() => handleDelete(post.id)} className="p-2 text-gray-300 hover:text-red-500 transition-all">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Smooth expand content */}
                 <motion.div
                   initial={false}
                   animate={{
-                    height: isExpanded || !isLong ? "auto" : "3.2em",
+                    height: isExpanded || !isLong || editingId === post.id ? "auto" : "3.2em",
                     opacity: 1
                   }}
                   transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
                   className="overflow-hidden mt-3"
                 >
-                  <p className="text-sm text-gray-500 leading-relaxed whitespace-pre-wrap">
-                    {post.content}
-                  </p>
+                  {editingId === post.id ? (
+                    <div className="space-y-3 mt-2">
+                      <input
+                        value={editForm.headline}
+                        onChange={e => setEditForm({ ...editForm, headline: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-gray-50"
+                      />
+                      <select
+                        value={editForm.category}
+                        onChange={e => setEditForm({ ...editForm, category: e.target.value })}
+                        className="px-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-gray-700 block w-1/3"
+                      >
+                        {categories.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
+                      </select>
+                      <textarea
+                        rows={4}
+                        value={editForm.content}
+                        onChange={e => setEditForm({ ...editForm, content: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-gray-50 resize-none"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
+                        <button onClick={handleSaveEdit} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"><Save size={14}/> Save</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 leading-relaxed whitespace-pre-wrap">
+                      {post.content}
+                    </p>
+                  )}
                 </motion.div>
 
                 {isLong && (

@@ -11,12 +11,14 @@ import {
   Shield,
   ChevronRight,
   Plane,
-  Database
+  Database,
+  BookOpen
 } from "lucide-react";
 import Cookies from "js-cookie";
 
 const navItems = [
   { name: "News Feed", href: "/staff/news", icon: Newspaper, desc: "Dispatch & Alerts" },
+  { name: "Magazine Manager", href: "/staff/magazines", icon: BookOpen, desc: "Publications" },
   { name: "Team Manager", href: "/staff/team", icon: Users, desc: "Personnel Hierarchy" },
   { name: "Custom Forms", href: "/staff/forms", icon: FileText, desc: "Application Builder" },
   { name: "Active Polls", href: "/staff/polls", icon: BarChart3, desc: "Staff Decisions" },

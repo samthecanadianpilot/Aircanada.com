@@ -85,6 +85,56 @@ export async function addNews(newsItem: any) {
   return await saveFileData('news.json', news);
 }
 
+export async function updateNews(newsId: string, updates: any) {
+  const news = await getNews();
+  const existingIdx = news.findIndex((n: any) => n.id === newsId);
+  if (existingIdx !== -1) {
+    news[existingIdx] = { ...news[existingIdx], ...updates };
+    return await saveFileData('news.json', news);
+  }
+  return false;
+}
+
+export async function deleteNews(newsId: string) {
+  let news = await getNews();
+  const initialLength = news.length;
+  news = news.filter((n: any) => n.id !== newsId);
+  if (news.length !== initialLength) {
+    return await saveFileData('news.json', news);
+  }
+  return false;
+}
+
+export async function getMagazines() {
+  return await getFileData('magazines.json', []);
+}
+
+export async function addMagazine(magazineItem: any) {
+  const magazines = await getMagazines();
+  magazines.unshift(magazineItem);
+  return await saveFileData('magazines.json', magazines);
+}
+
+export async function updateMagazine(magazineId: string, updates: any) {
+  const magazines = await getMagazines();
+  const existingIdx = magazines.findIndex((m: any) => m.id === magazineId);
+  if (existingIdx !== -1) {
+    magazines[existingIdx] = { ...magazines[existingIdx], ...updates };
+    return await saveFileData('magazines.json', magazines);
+  }
+  return false;
+}
+
+export async function deleteMagazine(magazineId: string) {
+  let magazines = await getMagazines();
+  const initialLength = magazines.length;
+  magazines = magazines.filter((m: any) => m.id !== magazineId);
+  if (magazines.length !== initialLength) {
+    return await saveFileData('magazines.json', magazines);
+  }
+  return false;
+}
+
 export async function getPolls() {
   return await getFileData('polls.json', []);
 }
