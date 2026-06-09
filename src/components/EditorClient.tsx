@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fabric } from "fabric";
+import * as fabric from "fabric";
 import { 
   Type, Image as ImageIcon, Save, ArrowLeft, 
   Trash2, PlusCircle, Layout, Layers

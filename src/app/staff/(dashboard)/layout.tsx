@@ -46,14 +46,14 @@ export default function StaffLayout({
         {/* Brand */}
         <div className="px-6 py-6 border-b border-white/[0.06]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-red-600 flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.3)]">
-              <Plane size={16} className="text-white -rotate-45" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.3)] p-1.5 border border-red-500/30">
+              <img src="/logo-roundel.png" alt="Air Canada" className="w-full h-full object-contain filter brightness-0 invert" />
             </div>
             <div>
-              <h2 className="text-[11px] font-bold tracking-[0.15em] uppercase text-white/80">
+              <h2 className="text-[12px] font-bold tracking-[0.15em] uppercase text-white shadow-sm">
                 Air Canada
               </h2>
-              <p className="text-[9px] tracking-[0.1em] text-white/25 uppercase">
+              <p className="text-[9px] tracking-[0.1em] text-white/40 uppercase mt-0.5">
                 Command Center
               </p>
             </div>
