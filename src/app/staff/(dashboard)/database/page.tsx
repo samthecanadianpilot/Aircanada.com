@@ -100,7 +100,7 @@ export default function UserDatabase() {
              </thead>
              <tbody className="divide-y divide-gray-100">
                {filteredUsers.map((user) => (
-                 <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
+                 <tr key={user.discordId} className="hover:bg-gray-50/50 transition-colors">
                    <td className="p-4">
                      <div className="flex items-center gap-3">
                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold border border-indigo-200">

@@ -23,6 +23,7 @@ const navItems = [
   { name: "Custom Forms", href: "/staff/forms", icon: FileText, desc: "Application Builder" },
   { name: "Active Polls", href: "/staff/polls", icon: BarChart3, desc: "Staff Decisions" },
   { name: "User Database", href: "/staff/database", icon: Database, desc: "Discord Profiles" },
+  { name: "Approvals", href: "/staff/approvals", icon: Shield, desc: "Pending Requests" },
 ];
 
 export default function StaffLayout({
@@ -35,7 +36,7 @@ export default function StaffLayout({
 
   const handleLogout = () => {
     Cookies.remove("staff_session");
-    router.push("/staff-gate");
+    router.push("/staff/login");
   };
 
   return (

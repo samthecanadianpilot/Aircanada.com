@@ -1,14 +1,13 @@
 import { Octokit } from "@octokit/rest";
 
-const v2 = 'Z2hwX29R' + 'YmZwdkd0aG4wW' + 'nRxejVYclY3S3FSMV' + 'RkSVZJdDB6M09xdQ==';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || Buffer.from(v2, 'base64').toString('utf8');
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
 const OWNER = 'samthecanadianpilot';
 const REPO = 'Aircanada.com';
 const BRANCH = 'main';
 
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
-async function getFileData(filename: string, defaultData: any) {
+export async function getFileData(filename: string, defaultData: any) {
   try {
     const { data } = await octokit.repos.getContent({
       owner: OWNER,
@@ -27,7 +26,7 @@ async function getFileData(filename: string, defaultData: any) {
   return defaultData;
 }
 
-async function saveFileData(filename: string, content: any) {
+export async function saveFileData(filename: string, content: any) {
   try {
     let sha;
     try {
@@ -170,4 +169,24 @@ export async function saveAssistanceChat(chatId: string, chatData: any) {
   const chats = await getAssistanceChats();
   chats[chatId] = chatData;
   return await saveFileData('assistance.json', chats);
+}
+
+export async function getUsers() {
+  return await getFileData('users.json', []);
+}
+
+export async function saveUser(user: any) {
+  const users = await getUsers();
+  users.push(user);
+  return await saveFileData('users.json', users);
+}
+
+export async function updateUser(username: string, updates: any) {
+  const users = await getUsers();
+  const idx = users.findIndex((u: any) => u.username === username);
+  if (idx !== -1) {
+    users[idx] = { ...users[idx], ...updates };
+    return await saveFileData('users.json', users);
+  }
+  return false;
 }

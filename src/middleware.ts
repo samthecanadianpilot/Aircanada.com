@@ -8,10 +8,10 @@ export function middleware(request: NextRequest) {
     const session = request.cookies.get('staff_session')?.value;
 
     if (!session) {
-      if (pathname === '/staff-gate') return NextResponse.next();
+      if (pathname === '/staff/login' || pathname === '/staff/signup') return NextResponse.next();
       
       const url = request.nextUrl.clone();
-      url.pathname = '/staff-gate';
+      url.pathname = '/staff/login';
       return NextResponse.redirect(url);
     }
   }
@@ -20,5 +20,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/staff/:path*', '/staff-gate'],
+  matcher: ['/staff/:path*'],
 };
