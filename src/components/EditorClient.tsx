@@ -103,11 +103,12 @@ export default function EditorClient({ magazineId }: { magazineId: string }) {
     canvas.renderAll();
   };
 
-  const addImage = () => {
+  const addImage = async () => {
     const url = prompt("Enter Image URL (e.g., https://example.com/img.png):");
     if (!url || !canvas) return;
     
-    fabric.Image.fromURL(url, (img) => {
+    try {
+      const img = await fabric.Image.fromURL(url, { crossOrigin: 'anonymous' });
       if (!img) {
         toast.error("Failed to load image from URL");
         return;
@@ -117,7 +118,9 @@ export default function EditorClient({ magazineId }: { magazineId: string }) {
       canvas.centerObject(img);
       canvas.setActiveObject(img);
       canvas.renderAll();
-    }, { crossOrigin: 'anonymous' });
+    } catch (err) {
+      toast.error("Failed to load image from URL");
+    }
   };
 
   const deleteSelected = () => {

@@ -55,8 +55,8 @@ export default function MagazineViewer({
       // LEGACY: If the magazine has canvasData (from Fabric.js editor)
       if (mag.canvasData && mag.canvasData.length > 0) {
         try {
-          const { fabric } = await import("fabric");
-          renderCanvasPages(fabric, mag.canvasData);
+          const fabricLib = await import("fabric");
+          renderCanvasPages(fabricLib, mag.canvasData);
         } catch {
           setLoading(false);
         }
